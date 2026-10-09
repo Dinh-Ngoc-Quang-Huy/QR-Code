@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trình Tạo QR Code Miễn Phí</title>
+  <!-- Nhúng hệ thống Google Fonts phong phú -->
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Caveat:wght@700&family=Dancing+Script:wght@700&family=Lobster&family=Montserrat:wght@700&family=Oswald:wght@700&family=Pacifico&family=Playfair+Display:wght@700&family=Quicksand:wght@700&family=Roboto:wght@700&family=Rubik:wght@700&display=swap" rel="stylesheet">
+  <!-- Thư viện lõi tạo QR -->
+  <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f1f5f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .container { display: flex; flex-direction: row; background: #ffffff; border-radius: 16px; width: 100%; max-width: 1040px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    
+    .editor-panel { flex: 1.25; padding: 22px; max-height: 92vh; overflow-y: auto; border-right: 1px solid #e2e8f0; }
+    .preview-panel { flex: 0.75; padding: 24px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; background: #f8fafc; }
+
+    h2 { margin: 0 0 16px; font-size: 20px; color: #0f172a; text-align: center; }
+    .section-title { font-size: 13px; font-weight: 700; color: #334155; margin: 14px 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    input[type="text"], input[type="number"], select, input[type="file"] { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; }
+    input[type="text"]:focus, select:focus, input[type="number"]:focus { border-color: #2563eb; }
+
+    /* Hàng gom gọn Icon bên trái - Màu bên phải */
+    .row-inline { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .option-selector { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+    .opt-btn { width: 38px; height: 38px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #fff; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 16px; transition: 0.15s; }
+    .opt-btn:hover { border-color: #94a3b8; }
+    .opt-btn.active { border-color: #22c55e; background: #f0fdf4; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
+    
+    .color-picker-box { display: flex; flex-direction: column; align-items: center; width: 68px; }
+    .color-picker-box label { font-size: 11px; margin-bottom: 2px; }
+    input[type="color"] { width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; padding: 1px; }
+
+    .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .slider-row input[type="range"] { flex: 1; }
+    .slider-row span { font-size: 12px; font-weight: bold; color: #2563eb; width: 42px; text-align: right; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    .preview-box { display: flex; justify-content: center; align-items: center; background: #ffffff; border-radius: 12px; border: 1px dashed #cbd5e1; padding: 15px; width: 100%; max-width: 380px; min-height: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 16px; }
+    #mainCanvas { max-width: 100%; height: auto; }
+
+    .btn-group { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 8px; }
+    button.action-btn { width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #ef4444; color: #fff; font-size: 11px; padding: 4px 8px; margin-top: 4px; border: none; border-radius: 4px; cursor: pointer; display: none; }
+
+    @media (max-width: 820px) {
+      .container { flex-direction: column; max-height: none; }
+      .editor-panel { border-right: none; max-height: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- CỘT CẤU HÌNH (TRÁI) -->
+    <div class="editor-panel">
+      <h2>Thiết Kế Mã QR & Khung</h2>
+
+      <div class="form-group">
+        <label for="textInput">Nội dung URL / Văn bản:</label>
+        <input type="text" id="textInput" value="https://google.com" oninput="updateAll()">
+      </div>
+
+      <!-- KIỂU DÁNG CHẤM + MÀU CHẤM + MÀU NỀN -->
+      <div class="section-title">Kiểu dáng QR & Màu sắc</div>
+      <div class="row-inline">
+        <div class="option-selector" id="dotSelector">
+          <button class="opt-btn active" data-val="square" title="Square">⬛</button>
+          <button class="opt-btn" data-val="dots" title="Dots">⚫</button>
+          <button class="opt-btn" data-val="rounded" title="Rounded">⬤</button>
+          <button class="opt-btn" data-val="extra-rounded" title="Extra Rounded">⭐</button>
+          <button class="opt-btn" data-val="classy" title="Classy">✨</button>
+          <button class="opt-btn" data-val="classy-rounded" title="Classy Rounded">💫</button>
+        </div>
+        <div class="color-picker-box">
+          <label>Màu QR</label>
+          <input type="color" id="fgColor" value="#0f172a" onchange="updateAll()">
+        </div>
+        <div class="color-picker-box">
+          <label>Màu nền</label>
+          <input type="color" id="bgColor" value="#ffffff" onchange="updateAll()">
+        </div>
+      </div>
+
+      <!-- MẮT NGOÀI + MÀU MẮT NGOÀI -->
+      <div class="section-title">Kiểu Mắt Bên Ngoài (3 Góc)</div>
+      <div class="row-inline">
+        <div class="option-selector" id="cornerSelector">
+          <button class="opt-btn active" data-val="square" title="Vuông">⬜</button>
+          <button class="opt-btn" data-val="dot" title="Tròn">⚪</button>
+          <button class="opt-btn" data-val="extra-rounded" title="Bo tròn viền">⚙️</button>
+          <button class="opt-btn" data-val="rounded" title="Góc mềm">🔲</button>
+        </div>
+        <div class="color-picker-box">
+          <label>Màu mắt</label>
+          <input type="color" id="eyeOuterColor" value="#0f172a" onchange="updateAll()">
+        </div>
+      </div>
+
+      <!-- MẮT TRONG + MÀU MẮT TRONG -->
+      <div class="section-title">Kiểu Mắt Bên Trong (Nhụy 3 Góc)</div>
+      <div class="row-inline">
+        <div class="option-selector" id="eyeSelector">
+          <button class="opt-btn active" data-val="square" title="Vuông">⬛</button>
+          <button class="opt-btn" data-val="dot" title="Tròn">⚫</button>
+          <button class="opt-btn" data-val="rounded" title="Bo tròn">🔳</button>
+        </div>
+        <div class="color-picker-box">
+          <label>Màu nhụy</label>
+          <input type="color" id="eyeInnerColor" value="#0f172a" onchange="updateAll()">
+        </div>
+      </div>
+
+      <!-- TÙY CHỌN KHUNG -->
+      <div class="section-title">Cấu hình Khung (Frame) & Bo Tròn</div>
+      <div class="grid-2 form-group">
+        <div>
+          <label for="frameStyle">Kiểu khung:</label>
+          <select id="frameStyle" onchange="updateAll()">
+            <option value="badge" selected>Khung thẻ dải chữ (ME-QR)</option>
+            <option value="simple">Viền bo tròn thanh mảnh</option>
+            <option value="custom_image">Dùng ảnh khung PNG trang trí</option>
+            <option value="none">Không viền (Chỉ mã QR)</option>
+          </select>
+        </div>
+        <div>
+          <label>Bo tròn khung:</label>
+          <div class="slider-row" style="margin-bottom: 0;">
+            <input type="range" id="frameRadius" min="0" max="60" value="20" oninput="document.getElementById('radiusVal').innerText=this.value+'px'; updateAll();">
+            <span id="radiusVal">20px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload ảnh khung riêng (nếu chọn custom_image) -->
+      <div class="form-group" id="customFrameUploadGroup" style="display: none;">
+        <label for="frameImgInput">Tải ảnh Khung PNG trang trí (hoa lá, lễ hội...):</label>
+        <input type="file" id="frameImgInput" accept="image/*">
+        <button id="removeFrameImgBtn" class="btn-danger" onclick="removeFrameImg()">Xóa ảnh khung</button>
+      </div>
+
+      <!-- MÀU KHUNG & MÀU NỀN DẢI CHỮ TÁCH BIỆT -->
+      <div class="grid-3 form-group">
+        <div class="color-picker-box" style="width: 100%;">
+          <label>Màu Khung Viền</label>
+          <input type="color" id="frameBorderColor" value="#0284c7" onchange="updateAll()">
+        </div>
+        <div class="color-picker-box" style="width: 100%;">
+          <label>Màu Nền Dải Chữ</label>
+          <input type="color" id="badgeBgColor" value="#0284c7" onchange="updateAll()">
+        </div>
+        <div class="color-picker-box" style="width: 100%;">
+          <label>Màu Chữ</label>
+          <input type="color" id="textColor" value="#ffffff" onchange="updateAll()">
+        </div>
+      </div>
+
+      <!-- KHOẢNG CÁCH TỪ QR ĐẾN CHỮ -->
+      <div class="form-group">
+        <label>Khoảng cách giữa QR và Dải chữ:</label>
+        <div class="slider-row">
+          <input type="range" id="qrTextGap" min="0" max="50" value="8" oninput="document.getElementById('gapVal').innerText=this.value+'px'; updateAll();">
+          <span id="gapVal">8px</span>
+        </div>
+      </div>
+
+      <!-- TÙY CHỌN CHỮ VÀ FONT -->
+      <div class="section-title">Nhãn Chữ & Font Đa Dạng</div>
+      <div class="form-group">
+        <input type="text" id="frameText" value="SCAN ME" placeholder="Nhập chữ..." oninput="updateAll()">
+      </div>
+      <div class="grid-2 form-group">
+        <div>
+          <label for="fontFamily">Font chữ:</label>
+          <select id="fontFamily" onchange="updateAll()">
+            <option value="-apple-system, sans-serif">Sans-Serif Chuẩn</option>
+            <option value="'Roboto', sans-serif">Roboto (Hiện đại)</option>
+            <option value="'Montserrat', sans-serif">Montserrat (Đậm đà)</option>
+            <option value="'Oswald', sans-serif">Oswald (Cao gọn)</option>
+            <option value="'Quicksand', sans-serif">Quicksand (Tròn trịa)</option>
+            <option value="'Playfair Display', serif">Playfair Display (Sang trọng)</option>
+            <option value="'Lobster', cursive">Lobster (Nghệ thuật nổi bật)</option>
+            <option value="'Pacifico', cursive">Pacifico (Phóng khoáng)</option>
+            <option value="'Dancing Script', cursive">Dancing Script (Mềm mại)</option>
+            <option value="'Caveat', cursive">Caveat (Viết tay cá tính)</option>
+            <option value="'Alex Brush', cursive">Alex Brush (Chữ ký thanh mảnh)</option>
+          </select>
+        </div>
+        <div>
+          <label for="fontSize">Kích thước chữ (px):</label>
+          <input type="number" id="fontSize" value="18" min="8" max="72" oninput="updateAll()">
+        </div>
+      </div>
+
+      <!-- UPLOAD LOGO -->
+      <div class="section-title">Logo Ở Giữa</div>
+      <div class="form-group">
+        <input type="file" id="logoInput" accept="image/*">
+        <button id="removeLogoBtn" class="btn-danger" onclick="removeLogo()">Xóa logo</button>
+      </div>
+    </div>
+
+    <!-- CỘT KẾT QUẢ (PHẢI) -->
+    <div class="preview-panel">
+      <h2>Kết Quả Thực Tế</h2>
+      <div class="preview-box">
+        <canvas id="mainCanvas"></canvas>
+      </div>
+      <div class="btn-group">
+        <button class="action-btn btn-primary" onclick="updateAll()">Làm mới</button>
+        <button class="action-btn btn-success" onclick="downloadImage()">Tải ảnh PNG Nét</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="hiddenQrContainer" style="display: none;"></div>
+
+  <script>
+    let uploadedLogoBase64 = "";
+    let uploadedFrameImg = null;
+    let selectedDotType = "square";
+    let selectedCornerType = "square";
+    let selectedEyeType = "square";
+
+    // Khởi tạo đối tượng QR ngầm
+    const qrCode = new QRCodeStyling({
+      width: 320,
+      height: 320,
+      type: "canvas",
+      data: "https://google.com",
+      image: "",
+      dotsOptions: { color: "#0f172a", type: "square" },
+      cornersSquareOptions: { type: "square", color: "#0f172a" },
+      cornersDotOptions: { type: "square", color: "#0f172a" },
+      backgroundOptions: { color: "#ffffff" },
+      imageOptions: { crossOrigin: "anonymous", margin: 6, imageSize: 0.22, hideBackgroundDots: true },
+      qrOptions: { errorCorrectionLevel: "H" }
+    });
+
+    const hiddenContainer = document.getElementById("hiddenQrContainer");
+    qrCode.append(hiddenContainer);
+
+    // Xử lý gắn sự kiện cho các nút chọn kiểu dáng
+    setupSelector("dotSelector", (val) => { selectedDotType = val; updateAll(); });
+    setupSelector("cornerSelector", (val) => { selectedCornerType = val; updateAll(); });
+    setupSelector("eyeSelector", (val) => { selectedEyeType = val; updateAll(); });
+
+    function setupSelector(id, callback) {
+      const container = document.getElementById(id);
+      const buttons = container.querySelectorAll(".opt-btn");
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          buttons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          callback(btn.getAttribute("data-val"));
+        });
+      });
+    }
+
+    // Tự động resize và làm nét logo
+    function processAndResizeLogo(file, targetSize, callback) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          let width = img.width, height = img.height;
+          if (width > height) {
+            if (width > targetSize) { height = Math.round((height * targetSize) / width); width = targetSize; }
+          } else {
+            if (height > targetSize) { width = Math.round((width * targetSize) / height); height = targetSize; }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, width, height);
+          callback(canvas.toDataURL("image/png"));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById("logoInput").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        processAndResizeLogo(file, 110, function(optimizedBase64) {
+          uploadedLogoBase64 = optimizedBase64;
+          document.getElementById("removeLogoBtn").style.display = "block";
+          updateAll();
+        });
+      }
+    });
+
+    function removeLogo() {
+      uploadedLogoBase64 = "";
+      document.getElementById("logoInput").value = "";
+      document.getElementById("removeLogoBtn").style.display = "none";
+      updateAll();
+    }
+
+    // Xử lý upload ảnh khung trang trí PNG
+    document.getElementById("frameImgInput").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const img = new Image();
+          img.onload = function() {
+            uploadedFrameImg = img;
+            document.getElementById("removeFrameImgBtn").style.display = "block";
+            renderFullCanvas();
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function removeFrameImg() {
+      uploadedFrameImg = null;
+      document.getElementById("frameImgInput").value = "";
+      document.getElementById("removeFrameImgBtn").style.display = "none";
+      renderFullCanvas();
+    }
+
+    // Cập nhật cấu hình QR và kích hoạt vẽ Canvas
+    function updateAll() {
+      const text = document.getElementById("textInput").value.trim() || "https://example.com";
+      const fg = document.getElementById("fgColor").value;
+      const bg = document.getElementById("bgColor").value;
+      const eyeOuter = document.getElementById("eyeOuterColor").value;
+      const eyeInner = document.getElementById("eyeInnerColor").value;
+      const frameStyle = document.getElementById("frameStyle").value;
+
+      document.getElementById("customFrameUploadGroup").style.display = (frameStyle === "custom_image") ? "block" : "none";
+
+      qrCode.update({
+        data: text,
+        image: uploadedLogoBase64,
+        dotsOptions: { color: fg, type: selectedDotType },
+        cornersSquareOptions: { color: eyeOuter, type: selectedCornerType },
+        cornersDotOptions: { color: eyeInner, type: selectedEyeType },
+        backgroundOptions: { color: bg }
+      });
+
+      setTimeout(renderFullCanvas, 120);
+    }
+
+    // Vẽ Canvas tổng hợp
+    function renderFullCanvas() {
+      const qrCanvas = hiddenContainer.querySelector("canvas");
+      if (!qrCanvas) return;
+
+      const mainCanvas = document.getElementById("mainCanvas");
+      const ctx = mainCanvas.getContext("2d");
+
+      const style = document.getElementById("frameStyle").value;
+      const labelText = document.getElementById("frameText").value.trim();
+      const frameBorderColor = document.getElementById("frameBorderColor").value;
+      const badgeBgColor = document.getElementById("badgeBgColor").value;
+      const textColor = document.getElementById("textColor").value;
+      const fontFamily = document.getElementById("fontFamily").value;
+      const fontSize = parseInt(document.getElementById("fontSize").value, 10) || 18;
+      const radius = parseInt(document.getElementById("frameRadius").value, 10);
+      const gap = parseInt(document.getElementById("qrTextGap").value, 10);
+
+      const qrSize = 320;
+      let padding = 24;
+
+      if (style === "custom_image" && uploadedFrameImg) {
+        // Chế độ ghép vào ảnh Khung trang trí PNG
+        const fW = uploadedFrameImg.width;
+        const fH = uploadedFrameImg.height;
+        mainCanvas.width = fW;
+        mainCanvas.height = fH;
+
+        // Vẽ ảnh khung
+        ctx.drawImage(uploadedFrameImg, 0, 0, fW, fH);
+        // Canh QR vào giữa ảnh khung (thu nhỏ tỷ lệ 55% khung)
+        const innerQrSize = Math.min(fW, fH) * 0.55;
+        const qrX = (fW - innerQrSize) / 2;
+        const qrY = (fH - innerQrSize) / 2 - 10;
+        ctx.drawImage(qrCanvas, qrX, qrY, innerQrSize, innerQrSize);
+
+        if (labelText) {
+          ctx.fillStyle = textColor;
+          ctx.font = `bold ${fontSize * (fW / 400)}px ${fontFamily}`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(labelText, fW / 2, qrY + innerQrSize + gap + 10);
+        }
+        return;
+      }
+
+      // Các chế độ khung vector vẽ bằng Canvas
+      let totalWidth = qrSize + padding * 2;
+      let totalHeight = totalWidth;
+      const bannerHeight = 44;
+
+      if (style === "badge") {
+        totalHeight = totalWidth + (labelText ? (bannerHeight + gap - padding + 16) : 0);
+      } else if (style === "simple" && labelText) {
+        totalHeight = totalWidth + gap + fontSize;
+      }
+
+      mainCanvas.width = totalWidth;
+      mainCanvas.height = totalHeight;
+
+      // Nền trắng chung
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+      if (style === "badge") {
+        // 1. Viền ngoài bo góc
+        ctx.strokeStyle = frameBorderColor;
+        ctx.lineWidth = 4;
+        roundRect(ctx, 4, 4, totalWidth - 8, totalHeight - 8, radius);
+        ctx.stroke();
+
+        // 2. Vẽ QR
+        ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
+
+        // 3. Vẽ dải chữ bên dưới (áp dụng khoảng cách gap linh hoạt)
+        if (labelText) {
+          const bannerY = padding + qrSize + gap;
+          ctx.fillStyle = badgeBgColor;
+          roundRect(ctx, padding, bannerY, qrSize, bannerHeight, Math.min(10, radius));
+          ctx.fill();
+
+          ctx.fillStyle = textColor;
+          ctx.font = `bold ${fontSize}px ${fontFamily}`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(labelText, totalWidth / 2, bannerY + bannerHeight / 2);
+        }
+
+      } else if (style === "simple") {
+        ctx.strokeStyle = frameBorderColor;
+        ctx.lineWidth = 3;
+        roundRect(ctx, 4, 4, totalWidth - 8, totalHeight - 8, radius);
+        ctx.stroke();
+
+        ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
+
+        if (labelText) {
+          ctx.fillStyle = textColor;
+          ctx.font = `bold ${fontSize}px ${fontFamily}`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(labelText, totalWidth / 2, padding + qrSize + gap + (fontSize / 2));
+        }
+
+      } else {
+        // Không viền
+        mainCanvas.width = qrSize;
+        mainCanvas.height = qrSize;
+        ctx.drawImage(qrCanvas, 0, 0, qrSize, qrSize);
+      }
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      if (radius < 0) radius = 0;
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function downloadImage() {
+      const mainCanvas = document.getElementById("mainCanvas");
+      const link = document.createElement("a");
+      link.download = "my_custom_qr.png";
+      link.href = mainCanvas.toDataURL("image/png");
+      link.click();
+    }
+
+    window.onload = function() {
+      setTimeout(updateAll, 200);
+    };
+  </script>
+</body>
+</html>
